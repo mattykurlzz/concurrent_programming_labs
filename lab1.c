@@ -5,6 +5,7 @@
 #include <math.h>
 
 #define EULERS (2.718281828459045)
+#define MINIMAL_DIVISOR 0.001
 
 void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
               unsigned int *seed, const int fixed) {
@@ -15,10 +16,14 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
         fprintf(stderr, "Memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
+    
+    if (fixed) {
+        (*M1_p)[0] = 1;
+    }
 
     for (uint32_t i = 0; i < len; i++) {
         if (fixed) {
-            (*M1_p)[i] = (i % A) + 1;
+            (*M1_p)[i] = (*M1_p)[0];  //(i % A) + 1;
         } else {
             (*M1_p)[i] = (rand_r(seed) % A) + 1;
         }
@@ -26,7 +31,7 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
 
     for (uint32_t i = 0; i < len / 2; i++) {
         if (fixed) {
-            (*M2_p)[i] = (i % (9 * A + 1)) + A;
+            (*M2_p)[i] = (*M1_p)[0] * A;  //(i % (9 * A + 1)) + A;
         } else {
             (*M2_p)[i] = (rand_r(seed) % (9 * A + 1)) + A;
         }
@@ -51,7 +56,7 @@ void merge(float * const M1, float * const M2, const uint32_t len) {
     }
 }
 
-void sort(float * const M2, const uint32_t len) {
+void sort_list(float * const M2, const uint32_t len) {
     float tmp = 0;
     uint32_t i = 1;
     while (i < len / 2) {
@@ -71,10 +76,10 @@ float reduce(float * const M2, const uint32_t len) {
     float sum = 0;
     float tmp = 0;
 
+    compare = M2[0];
     for (uint32_t i = 0; i < len / 2; i++) {
-        if (M2[i] != 0) {
+        if ((fabsf(M2[i]) >= MINIMAL_DIVISOR) && (fabsf(M2[i]) < compare)) {
             compare = M2[i];
-            break;
         }
     }
 
@@ -117,7 +122,7 @@ int main(int argc, char *argv[]) {
         map(M1, M2, N);
         merge(M1, M2, N);
         if (!no_sort) {
-            sort(M2, N);
+            sort_list(M2, N);
         }
         iteration_result = reduce(M2, N);
 

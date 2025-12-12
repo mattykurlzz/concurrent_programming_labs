@@ -1,0 +1,202 @@
+iteration 0
+reduce result: -0.683795
+iteration 1
+reduce result: -1.952523
+iteration 2
+reduce result: -0.101046
+iteration 3
+reduce result: -0.249246
+iteration 4
+reduce result: -4.273245
+iteration 5
+reduce result: -1.854411
+iteration 6
+reduce result: 0.207638
+iteration 7
+reduce result: -2.950614
+iteration 8
+reduce result: -0.184303
+iteration 9
+reduce result: -1.928746
+iteration 10
+reduce result: -0.919309
+iteration 11
+reduce result: 3.778060
+iteration 12
+reduce result: -0.958244
+iteration 13
+reduce result: 0.296934
+iteration 14
+reduce result: -1.182896
+iteration 15
+reduce result: 0.260973
+iteration 16
+reduce result: 1.263621
+iteration 17
+reduce result: -5.346941
+iteration 18
+reduce result: -2.041130
+iteration 19
+reduce result: -2.840003
+iteration 20
+reduce result: 0.598255
+iteration 21
+reduce result: -0.490060
+iteration 22
+reduce result: -0.446181
+iteration 23
+reduce result: 3.109874
+iteration 24
+reduce result: -1.991968
+iteration 25
+reduce result: 1.629962
+iteration 26
+reduce result: 2.505725
+iteration 27
+reduce result: -1.738780
+iteration 28
+reduce result: -1.341277
+iteration 29
+reduce result: -2.855093
+iteration 30
+reduce result: -1.908517
+iteration 31
+reduce result: 1.219730
+iteration 32
+reduce result: -0.513364
+iteration 33
+reduce result: 1.339159
+iteration 34
+reduce result: -1.834626
+iteration 35
+reduce result: 1.456326
+iteration 36
+reduce result: -7.423930
+iteration 37
+reduce result: -2.175107
+iteration 38
+reduce result: -0.991535
+iteration 39
+reduce result: -1.796277
+iteration 40
+reduce result: 0.431497
+iteration 41
+reduce result: -2.588943
+iteration 42
+reduce result: -2.107704
+iteration 43
+reduce result: -0.360798
+iteration 44
+reduce result: 0.466549
+iteration 45
+reduce result: 2.327361
+iteration 46
+reduce result: -1.470415
+iteration 47
+reduce result: -2.592069
+iteration 48
+reduce result: 0.633209
+iteration 49
+reduce result: -4.206316
+iteration 50
+reduce result: -2.554450
+iteration 51
+reduce result: -6.166804
+iteration 52
+reduce result: -2.720832
+iteration 53
+reduce result: -2.651064
+iteration 54
+reduce result: -1.952565
+iteration 55
+reduce result: -1.306031
+iteration 56
+reduce result: -4.270611
+iteration 57
+reduce result: -0.906992
+iteration 58
+reduce result: 0.749944
+iteration 59
+reduce result: -5.285002
+iteration 60
+reduce result: -4.418540
+iteration 61
+reduce result: -0.538750
+iteration 62
+reduce result: -5.116438
+iteration 63
+reduce result: 2.946492
+iteration 64
+reduce result: -0.456470
+iteration 65
+reduce result: -2.301221
+iteration 66
+reduce result: 0.490726
+iteration 67
+reduce result: -3.447768
+iteration 68
+reduce result: -2.449727
+iteration 69
+reduce result: -2.526747
+iteration 70
+reduce result: 1.553100
+iteration 71
+reduce result: -1.833002
+iteration 72
+reduce result: -0.228617
+iteration 73
+reduce result: -2.677442
+iteration 74
+reduce result: 0.505010
+iteration 75
+reduce result: -2.292887
+iteration 76
+reduce result: 0.000000
+iteration 77
+reduce result: 0.166523
+iteration 78
+reduce result: -1.034791
+iteration 79
+reduce result: 0.371314
+iteration 80
+reduce result: -3.510603
+iteration 81
+reduce result: -1.155191
+iteration 82
+reduce result: 0.414006
+iteration 83
+reduce result: 1.697200
+iteration 84
+reduce result: 0.122903
+iteration 85
+reduce result: -2.982991
+iteration 86
+reduce result: -3.718260
+iteration 87
+reduce result: 0.480367
+iteration 88
+reduce result: -2.491166
+iteration 89
+reduce result: -1.519764
+iteration 90
+reduce result: 0.208086
+iteration 91
+reduce result: 1.890042
+iteration 92
+reduce result: -1.378251
+iteration 93
+reduce result: -2.359581
+iteration 94
+reduce result: -1.016420
+iteration 95
+reduce result: -3.750832
+iteration 96
+reduce result: -3.649726
+iteration 97
+reduce result: -3.570681
+iteration 98
+reduce result: -3.136051
+iteration 99
+reduce result: -2.557058
+
+N=100. Milliseconds passed: 0

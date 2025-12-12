@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <math.h>
+#include <omp.h>
 
 #define EULERS (2.718281828459045)
 #define MINIMAL_DIVISOR 0.001
@@ -21,6 +22,7 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
         (*M1_p)[0] = 1;
     }
 
+    // parallelization screws up random values because of unordered seed modification
     for (uint32_t i = 0; i < len; i++) {
         if (fixed) {
             (*M1_p)[i] = (*M1_p)[0];  //(i % A) + 1;
@@ -39,11 +41,13 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
 }
 
 void map(float * const M1, float * const M2, const uint32_t len) {
+    #pragma omp parallel for default(none) shared(M1, len)
     for (uint32_t i = 0; i < len; i++) {
         M1[i] = sinh(M1[i]);
         M1[i] = M1[i] * M1[i];
     }
 
+    #pragma omp parallel for default(none) shared(M2, len)
     for (uint32_t i = 0; i < len / 2; i++) {
         M2[i] = log10(M2[i]);
         M2[i] = pow(M2[i], EULERS);
@@ -51,6 +55,7 @@ void map(float * const M1, float * const M2, const uint32_t len) {
 }
 
 void merge(float * const M1, float * const M2, const uint32_t len) {
+    #pragma omp parallel for default(none) shared(len, M1, M2)
     for (uint32_t i = 0; i < len / 2; i++) {
         M2[i] = M1[i] >= M2[i] ? M1[i] : M2[i];
     }
@@ -77,16 +82,19 @@ float reduce(float * const M2, const uint32_t len) {
     float tmp = 0;
 
     compare = M2[0];
+    // not paralleled because concurrent comparisons may break logic
     for (uint32_t i = 0; i < len / 2; i++) {
         if ((fabsf(M2[i]) >= MINIMAL_DIVISOR) && (fabsf(M2[i]) < compare)) {
             compare = M2[i];
         }
     }
 
+    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare, sum)
     for (uint32_t i = 0; i < len / 2; i++) {
         if ((int)(M2[i] / compare) % 2 == 0) {
             tmp = sin(M2[i]);
             if (!isnan(tmp)) {
+                #pragma omp atomic
                 sum += sin(M2[i]);
             }
         }
@@ -95,6 +103,7 @@ float reduce(float * const M2, const uint32_t len) {
     return sum;
 }
 
+// build command: gcc -O3 -Wall -fopenmp -o lab3_parallel_with_fopenmp lab1.c -lm
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         printf("Function expects at least 2 arguments\n");
@@ -102,12 +111,15 @@ int main(int argc, char *argv[]) {
     }
     const int fixed_seq = atoi(argv[2]) > 2;
     const int no_sort = atoi(argv[2]) % 2 == 0;
+    const int threads_num = argc > 3 ? atoi(argv[3]) : 1;
 
     const uint32_t A = 256;
     int32_t N;
     float iteration_result = 0;
     struct timeval T1, T2;
     int64_t delta_ms;
+
+    omp_set_num_threads(threads_num);
 
     N = atoi(argv[1]);
     gettimeofday(&T1, NULL);
@@ -118,6 +130,7 @@ int main(int argc, char *argv[]) {
         srand(i);
         float *M1 = 0;
         float *M2 = 0;
+
         generate(&M1, &M2, N, A, &seed, fixed_seq);
         map(M1, M2, N);
         merge(M1, M2, N);

@@ -23,6 +23,7 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
     }
 
     // parallelization screws up random values because of unordered seed modification
+    #pragma omp parallel for default(none) shared(M1_p, len, fixed, A, seed)
     for (uint32_t i = 0; i < len; i++) {
         if (fixed) {
             (*M1_p)[i] = (*M1_p)[0];  //(i % A) + 1;
@@ -31,6 +32,7 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
         }
     }
 
+    #pragma omp parallel for default(none) shared(M1_p, M2_p, len, fixed, A, seed)
     for (uint32_t i = 0; i < len / 2; i++) {
         if (fixed) {
             (*M2_p)[i] = (*M1_p)[0] * A;  //(i % (9 * A + 1)) + A;
@@ -109,8 +111,8 @@ int main(int argc, char *argv[]) {
         printf("Function expects at least 2 arguments\n");
         return -1;
     }
-    const int fixed_seq = atoi(argv[2]) > 2;
-    const int no_sort = atoi(argv[2]) % 2 == 0;
+    const int fixed_seq = atoi(argv[2]) > 2; // T if 3 or 4
+    const int no_sort = atoi(argv[2]) % 2 == 0; // T if 2 or 4
     const int threads_num = argc > 3 ? atoi(argv[3]) : 1;
 
     const uint32_t A = 256;

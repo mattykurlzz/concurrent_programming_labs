@@ -1,0 +1,25 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import sys, os
+
+results_name = "plot/speed_results.csv"
+
+results = pd.read_csv(results_name)
+
+
+width = 0.8
+results.sort_values("elements_count", ascending=True)
+
+for elements_c in results["elements_count"].unique():
+    fig, ax = plt.subplots()
+
+    results_local = results.loc[results['elements_count'] == elements_c]
+    bottom = results_local['time_taken'].min() * 0.9
+    for index, row in results_local.iterrows():
+        ax.bar(row["thread_count"], row["time_taken"], width, 0)
+        
+        
+    ax.set_ylim(bottom)
+    plt.show()#("files/bar_" + str(elements_c) + ".png")
+    
+# plt.show()

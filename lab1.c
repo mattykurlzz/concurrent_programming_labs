@@ -18,15 +18,17 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
         exit(EXIT_FAILURE);
     }
     
-    if (fixed) {
-        (*M1_p)[0] = 1;
+    // we need to introduce variance because either way results are always 0
+    if (fixed && (len > 1)) {
+        (*M1_p)[0] = 1.2;
+        (*M1_p)[1] = 3;
     }
 
     // parallelization screws up random values because of unordered seed modification
     #pragma omp parallel for default(none) shared(M1_p, len, fixed, A, seed)
     for (uint32_t i = 0; i < len; i++) {
         if (fixed) {
-            (*M1_p)[i] = (*M1_p)[0];  //(i % A) + 1;
+            (*M1_p)[i] = (*M1_p)[i % 2];  //(i % A) + 1;
         } else {
             (*M1_p)[i] = (rand_r(seed) % A) + 1;
         }
@@ -35,7 +37,7 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
     #pragma omp parallel for default(none) shared(M1_p, M2_p, len, fixed, A, seed)
     for (uint32_t i = 0; i < len / 2; i++) {
         if (fixed) {
-            (*M2_p)[i] = (*M1_p)[0] * A;  //(i % (9 * A + 1)) + A;
+            (*M2_p)[i] = (*M1_p)[i % 2] * A;  //(i % (9 * A + 1)) + A;
         } else {
             (*M2_p)[i] = (rand_r(seed) % (9 * A + 1)) + A;
         }
@@ -78,16 +80,18 @@ void sort_list(float * const M2, const uint32_t len) {
     }
 }
 
-float reduce(float * const M2, const uint32_t len) {
+float reduce(float * const M2, const uint32_t len, const int no_sort) {
     float compare = 0;
     float sum = 0;
     float tmp = 0;
 
     compare = M2[0];
-    // not paralleled because concurrent comparisons may break logic
-    for (uint32_t i = 0; i < len / 2; i++) {
-        if ((fabsf(M2[i]) >= MINIMAL_DIVISOR) && (fabsf(M2[i]) < compare)) {
-            compare = M2[i];
+    // cocncurrent reading and writing to compare may break cycle logic
+    if (no_sort) {
+        for (uint32_t i = 0; i < len / 2; i++) {
+            if ((fabsf(M2[i]) >= MINIMAL_DIVISOR) && (fabsf(M2[i]) < compare)) {
+                compare = M2[i];
+            }
         }
     }
 
@@ -97,7 +101,7 @@ float reduce(float * const M2, const uint32_t len) {
             tmp = sin(M2[i]);
             if (!isnan(tmp)) {
                 #pragma omp atomic
-                sum += sin(M2[i]);
+                sum += tmp;
             }
         }
     }
@@ -121,7 +125,10 @@ int main(int argc, char *argv[]) {
     struct timeval T1, T2;
     int64_t delta_ms;
 
+#ifdef _OPENMP
+    printf("set threads num to %i\n", threads_num);
     omp_set_num_threads(threads_num);
+#endif
 
     N = atoi(argv[1]);
     gettimeofday(&T1, NULL);
@@ -139,7 +146,7 @@ int main(int argc, char *argv[]) {
         if (!no_sort) {
             sort_list(M2, N);
         }
-        iteration_result = reduce(M2, N);
+        iteration_result = reduce(M2, N, no_sort);
 
         printf("reduce result: %f\n", iteration_result);
     }

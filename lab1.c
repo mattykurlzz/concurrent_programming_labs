@@ -25,36 +25,31 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
     }
 
     // parallelization screws up random values because of unordered seed modification
-    #pragma omp parallel for default(none) shared(M1_p, len, fixed, A, seed)
+    #pragma omp parallel for default(none) shared(M1_p, M2_p, len, fixed, A, seed)
     for (uint32_t i = 0; i < len; i++) {
         if (fixed) {
             (*M1_p)[i] = (*M1_p)[i % 2];  //(i % A) + 1;
+            if ( i < len / 2) {
+                (*M2_p)[i] = (*M1_p)[i % 2] * A;  //(i % (9 * A + 1)) + A;
+            }
         } else {
             (*M1_p)[i] = (rand_r(seed) % A) + 1;
-        }
-    }
-
-    #pragma omp parallel for default(none) shared(M1_p, M2_p, len, fixed, A, seed)
-    for (uint32_t i = 0; i < len / 2; i++) {
-        if (fixed) {
-            (*M2_p)[i] = (*M1_p)[i % 2] * A;  //(i % (9 * A + 1)) + A;
-        } else {
-            (*M2_p)[i] = (rand_r(seed) % (9 * A + 1)) + A;
+            if ( i < len / 2) {
+                (*M2_p)[i] = (rand_r(seed) % (9 * A + 1)) + A;
+            }
         }
     }
 }
 
 void map(float * const M1, float * const M2, const uint32_t len) {
-    #pragma omp parallel for default(none) shared(M1, len)
+    #pragma omp parallel for default(none) shared(M1, M2, len)
     for (uint32_t i = 0; i < len; i++) {
         M1[i] = sinh(M1[i]);
         M1[i] = M1[i] * M1[i];
-    }
-
-    #pragma omp parallel for default(none) shared(M2, len)
-    for (uint32_t i = 0; i < len / 2; i++) {
-        M2[i] = log10(M2[i]);
-        M2[i] = pow(M2[i], EULERS);
+        if (i < len / 2) {
+            M2[i] = log10(M2[i]);
+            M2[i] = pow(M2[i], EULERS);
+        }
     }
 }
 

@@ -51,6 +51,23 @@ void map(float * const M1, float * const M2, const uint32_t len) {
             M2[i] = pow(M2[i], EULERS);
         }
     }
+
+    float *M2_copy = (float *)malloc(sizeof(float) * (len / 2));
+
+    #pragma omp parallel for default(none) shared(M1, M2, M2_copy, len)
+    for (size_t i = 0; i < len / 2; i++) {
+      M2_copy[i] = M2[i];
+      M2[i] = 0;
+    }
+
+    #pragma omp parallel for default(none) shared(M2, M2_copy, len)
+    for (size_t i = 0; i < len / 2; i++) {
+        for (size_t j = 0; j <= i; j++) {
+          M2[i] += M2_copy[j];
+        }
+    }
+
+    free(M2_copy);
 }
 
 void merge(float * const M1, float * const M2, const uint32_t len) {
@@ -142,6 +159,9 @@ int main(int argc, char *argv[]) {
             sort_list(M2, N);
         }
         iteration_result = reduce(M2, N, no_sort);
+
+        free(M1);
+        free(M2);
 
         printf("reduce result: %f\n", iteration_result);
     }

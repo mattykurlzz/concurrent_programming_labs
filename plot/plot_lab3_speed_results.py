@@ -28,6 +28,19 @@ for elements_c, group in results.groupby("elements_count"):
     bars = ax.bar(thread_pos, times, 0.7, color='orange', 
                   edgecolor='white', linewidth=1.5, alpha=0.85)
     
+    # --- Trend line (approximation) ---
+    # Fit a polynomial (linear by default) to the bar centers (indices)
+    deg = 1  # change to 2 for quadratic fit if you prefer a curved trend
+    coeffs = np.polyfit(thread_pos, times, deg)
+    poly = np.poly1d(coeffs)
+    x_line = np.linspace(thread_pos.min(), thread_pos.max(), 200)
+    y_line = poly(x_line)
+    ax.plot(x_line, y_line, color='tab:blue', linestyle='--', linewidth=2.0, label='Trend')
+    # optional: plot fitted points at bar centers
+    ax.plot(thread_pos, poly(thread_pos), 'o', color='tab:blue', markersize=5)
+    ax.legend()
+    # -----------------------------------
+    
     # Customize appearance
     ax.set_xlabel('Thread Count', fontsize=12, fontweight='bold')
     ax.set_ylabel('Time Taken (ms)', fontsize=12, fontweight='bold')
@@ -45,9 +58,10 @@ for elements_c, group in results.groupby("elements_count"):
     ax.grid(axis='y', alpha=0.3, linestyle='--')
     ax.set_axisbelow(True)
     
-    # Dynamic y-limit with padding
-    bottom = min(times) * 0.9
-    ax.set_ylim(bottom=bottom)
+    # Dynamic y-limit with padding (include trend line extents)
+    ymin = min(times.min(), float(np.min(y_line)))
+    ymax = max(times.max(), float(np.max(y_line)))
+    ax.set_ylim(ymin * 0.9, ymax * 1.05)
     
     # Tight layout and save
     plt.tight_layout()

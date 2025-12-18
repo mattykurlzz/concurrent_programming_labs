@@ -25,7 +25,7 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
     }
 
     // parallelization screws up random values because of unordered seed modification
-    #pragma omp parallel for default(none) shared(M1_p, M2_p, len, fixed, A, seed)
+    #pragma omp parallel for default(none) shared(M1_p, M2_p, len, fixed, A, seed)// schedule(static)
     for (uint32_t i = 0; i < len; i++) {
         if (fixed) {
             (*M1_p)[i] = (*M1_p)[i % 2];  //(i % A) + 1;
@@ -42,7 +42,7 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
 }
 
 void map(float * const M1, float * const M2, const uint32_t len) {
-    #pragma omp parallel for default(none) shared(M1, M2, len)
+    #pragma omp parallel for default(none) shared(M1, M2, len)// schedule(static)
     for (uint32_t i = 0; i < len; i++) {
         M1[i] = sinh(M1[i]);
         M1[i] = M1[i] * M1[i];
@@ -54,13 +54,13 @@ void map(float * const M1, float * const M2, const uint32_t len) {
 
     float *M2_copy = (float *)malloc(sizeof(float) * (len / 2));
 
-    #pragma omp parallel for default(none) shared(M1, M2, M2_copy, len)
+    #pragma omp parallel for default(none) shared(M1, M2, M2_copy, len)// schedule(static)
     for (size_t i = 0; i < len / 2; i++) {
       M2_copy[i] = M2[i];
       M2[i] = 0;
     }
 
-    #pragma omp parallel for default(none) shared(M2, M2_copy, len)
+    #pragma omp parallel for default(none) shared(M2, M2_copy, len) schedule(dynamic)
     for (size_t i = 0; i < len / 2; i++) {
         for (size_t j = 0; j <= i; j++) {
           M2[i] += M2_copy[j];
@@ -71,7 +71,7 @@ void map(float * const M1, float * const M2, const uint32_t len) {
 }
 
 void merge(float * const M1, float * const M2, const uint32_t len) {
-    #pragma omp parallel for default(none) shared(len, M1, M2)
+    #pragma omp parallel for default(none) shared(len, M1, M2)// schedule(guided)
     for (uint32_t i = 0; i < len / 2; i++) {
         M2[i] = M1[i] >= M2[i] ? M1[i] : M2[i];
     }
@@ -107,7 +107,7 @@ float reduce(float * const M2, const uint32_t len, const int no_sort) {
         }
     }
 
-    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare, sum)
+    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare, sum)// schedule(guided)
     for (uint32_t i = 0; i < len / 2; i++) {
         if ((int)(M2[i] / compare) % 2 == 0) {
             tmp = sin(M2[i]);

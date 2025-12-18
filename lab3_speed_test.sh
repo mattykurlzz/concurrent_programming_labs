@@ -8,7 +8,7 @@ csv_name="$plot_name.csv"
 # params_name="$(plot_name)_params"
 
 max_threads=12
-array_len_max=50000
+array_len_max=30000
 
 if [[ ! -d "$plot_dir" ]]; then 
     mkdir "$plot_dir"
@@ -24,7 +24,7 @@ fi
 touch "$plot_dir/$csv_name"
 echo "thread_count,elements_count,time_taken" >> "$plot_dir/$csv_name"                
 
-for array_len in $(seq 5000 5000 $array_len_max); do
+for array_len in 5000 15000 30000; do
     for threadc in $(seq 1 $max_threads); do
         tmp_file="$plot_dir/$tmp_file_name"
         ./lab3_parallel_fopenmp $array_len 1 $threadc > "$tmp_file"

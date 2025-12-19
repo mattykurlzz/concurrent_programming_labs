@@ -6,7 +6,6 @@ bins_dir="build"
 measurments_dir="chunk_size"
 tmp_file_name="tmp.log"
 csv_name="$measurments_dir.csv"
-# params_name="$(plot_name)_params"
 
 num_threads=11
 array_len_max=30000

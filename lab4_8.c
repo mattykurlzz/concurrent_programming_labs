@@ -102,64 +102,71 @@ void merge(float * const M1, float * const M2, const uint32_t len) {
     }
 }
 
-void sort_list(float * const M2, const uint32_t len) {
-    int k = omp_get_num_procs();
+void sort_list(float ** M2_p, const uint32_t len) {
+    uint32_t k = omp_get_max_threads();
     
-    uint32_t part_size = (len / 2) / k;
-    uint32_t last_part_size = (len / 2) - (part_size * (k - 1));
+    uint32_t partial_len = ceil((len / 2.) / k);
+    uint32_t last_part_len = (len / 2) - (k - 1) * partial_len;
+    
+    uint32_t *sizes = (uint32_t *)malloc(sizeof(uint32_t) * k);
+    uint32_t *tips = (uint32_t *)malloc(sizeof(uint32_t) * k);
+    uint32_t *shifts = (uint32_t *)malloc(sizeof(uint32_t) * k);
+    float *new_M2 = (float *)malloc(sizeof(float) * len / 2);
+    float *M2 = *M2_p;
+
+    for (int i = 0; i < k; i++ ) {
+        sizes[i] = i < (k-1) ? partial_len : last_part_len;
+        tips[i] = 0;
+        shifts[i] = partial_len * i;
+    }
     
     #pragma omp parallel num_threads(k)
     {
-        int thread_id = omp_get_thread_num();
-        uint32_t start = thread_id * part_size;
-        uint32_t size = (thread_id == k - 1) ? last_part_size : part_size;
-        
-        for (uint32_t i = start + 1; i < start + size; i++) {
-            uint32_t j = i;
-            while (j > start && M2[j] < M2[j-1]) {
-                float tmp = M2[j];
+        uint32_t current_thread = omp_get_thread_num();
+        float tmp = 0;
+
+        for (uint32_t j = shifts[current_thread]; j < shifts[current_thread] + sizes[current_thread];) {
+            if ( j == shifts[current_thread] ) {
+                j++;
+                continue;
+            }
+            if (M2[j] < M2[j-1]) {
+                tmp = M2[j];
                 M2[j] = M2[j-1];
                 M2[j-1] = tmp;
+                
                 j--;
+            } else {
+                j++;
             }
         }
-    }
-    
-    float *merged = (float *)malloc(sizeof(float) * (len / 2));
-    uint32_t *indices = (uint32_t *)malloc(k * sizeof(uint32_t));
-    uint32_t *starts = (uint32_t *)malloc(k * sizeof(uint32_t));
-    uint32_t *sizes = (uint32_t *)malloc(k * sizeof(uint32_t));
-    
-    for (int i = 0; i < k; i++) {
-        starts[i] = i * part_size;
-        sizes[i] = (i == k - 1) ? last_part_size : part_size;
-        indices[i] = starts[i] * sizes[i];
-    }
-    
-    for (uint32_t idx = 0; idx < len / 2; idx++) {
-        int min_part = -1;
-        float min_val = INFINITY;
-        
-        for (int i = 0; i < k; i++) {
-            uint32_t pos = starts[i] + indices[i];
-            if (M2[pos] < min_val) {
-                min_val = M2[pos];
-                min_part = i;
-            }
-        }
-        
-        merged[idx] = min_val;
-        indices[min_part]++;
     }
     
     for (uint32_t i = 0; i < len / 2; i++) {
-        M2[i] = merged[i];
+        uint32_t min_thread_idx = 0;
+        float min = INFINITY;
+
+        for (uint32_t j = 0; j < k; j++) {
+            if (tips[j] == sizes[j]) continue;
+            
+            if (M2[tips[j] + shifts[j]] < min) {
+                min_thread_idx = j;
+                min = M2[tips[j] + shifts[j]];
+            }
+        }
+        
+        new_M2[i] = min;
+        tips[min_thread_idx]++;
     }
+    printf("\n");
+
+    free(*M2_p);
     
-    free(merged);
-    free(indices);
-    free(starts);
+    *M2_p = new_M2;
+    
     free(sizes);
+    free(tips);
+    free(shifts);
 }
 
 float reduce(float * const M2, const uint32_t len, const int no_sort) {
@@ -239,7 +246,7 @@ int main(int argc, char *argv[]) {
                 map(M1, M2, N);
                 merge(M1, M2, N);
                 if (!no_sort) {
-                    sort_list(M2, N);
+                    sort_list(&M2, N);
                 }
                 iteration_result = reduce(M2, N, no_sort);
 

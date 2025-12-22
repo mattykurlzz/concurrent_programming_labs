@@ -27,15 +27,16 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
     // parallelization screws up random values because of unordered seed modification
     #pragma omp parallel for default(none) shared(M1_p, M2_p, len, fixed, A, seed) schedule(static, 8)
     for (uint32_t i = 0; i < len; i++) {
+        unsigned int local_seed = seed + i;
         if (fixed) {
             (*M1_p)[i] = (*M1_p)[i % 2];  //(i % A) + 1;
             if ( i < len / 2) {
                 (*M2_p)[i] = (*M1_p)[i % 2] * A;  //(i % (9 * A + 1)) + A;
             }
         } else {
-            (*M1_p)[i] = (rand_r(seed) % A) + 1;
+            (*M1_p)[i] = (rand_r(&local_seed) % A) + 1;
             if ( i < len / 2) {
-                (*M2_p)[i] = (rand_r(seed) % (9 * A + 1)) + A;
+                (*M2_p)[i] = (rand_r(&local_seed) % (9 * A + 1)) + A;
             }
         }
     }
@@ -107,12 +108,11 @@ float reduce(float * const M2, const uint32_t len, const int no_sort) {
         }
     }
 
-    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare, sum) schedule(guided, 13)
+    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare, sum) schedule(guided, 13) reduction(+:sum)
     for (uint32_t i = 0; i < len / 2; i++) {
         if ((int)(M2[i] / compare) % 2 == 0) {
             tmp = sin(M2[i]);
             if (!isnan(tmp)) {
-                #pragma omp atomic
                 sum += tmp;
             }
         }

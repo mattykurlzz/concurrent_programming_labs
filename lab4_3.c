@@ -20,7 +20,7 @@ unsigned int hash_position(uint32_t position, uint32_t iteration) {
 }
 
 void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
-              unsigned int *seed, const int fixed) {
+              unsigned int seed, const int fixed) {
     *M1_p = (float *)malloc(sizeof(float) * len);
     *M2_p = (float *)malloc(sizeof(float) * (len / 2));
 
@@ -35,7 +35,7 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
         (*M1_p)[1] = 3;
     }
 
-    uint32_t iteration = *seed;
+    uint32_t iteration = seed;
 
     #pragma omp parallel for default(none) shared(M1_p, M2_p, len, fixed, A, iteration) schedule(static, 8)
     for (uint32_t i = 0; i < len; i++) {
@@ -167,12 +167,11 @@ float reduce(float * const M2, const uint32_t len, const int no_sort) {
         }
     }
 
-    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare, sum) schedule(guided, 13)
+    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare, sum) schedule(guided, 13) reduction(+:sum)
     for (uint32_t i = 0; i < len / 2; i++) {
         if ((int)(M2[i] / compare) % 2 == 0) {
             tmp = sin(M2[i]);
             if (!isnan(tmp)) {
-                #pragma omp atomic
                 sum += tmp;
             }
         }
@@ -214,7 +213,7 @@ int main(int argc, char *argv[]) {
         float *M1 = 0;
         float *M2 = 0;
 
-        generate(&M1, &M2, N, A, &seed, fixed_seq);
+        generate(&M1, &M2, N, A, seed, fixed_seq);
         map(M1, M2, N);
         merge(M1, M2, N);
         if (!no_sort) {

@@ -1,0 +1,4 @@
+set threads num to 12
+current progress: 57
+
+N=15000. Milliseconds passed: 1742

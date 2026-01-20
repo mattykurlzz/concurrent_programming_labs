@@ -1,0 +1,203 @@
+set threads num to 12
+iteration 0
+reduce result: -361.208008
+iteration 1
+reduce result: -338.797455
+iteration 2
+reduce result: -422.668579
+iteration 3
+reduce result: -332.953247
+iteration 4
+reduce result: -400.943420
+iteration 5
+reduce result: -380.796265
+iteration 6
+reduce result: -386.604401
+iteration 7
+reduce result: -494.519745
+iteration 8
+reduce result: -335.730011
+iteration 9
+reduce result: -554.054382
+iteration 10
+reduce result: -505.619171
+iteration 11
+reduce result: -294.514008
+iteration 12
+reduce result: -509.151978
+iteration 13
+reduce result: -333.811157
+iteration 14
+reduce result: -408.856812
+iteration 15
+reduce result: -471.313568
+iteration 16
+reduce result: -369.449493
+iteration 17
+reduce result: -211.006012
+iteration 18
+reduce result: -425.370178
+iteration 19
+reduce result: -423.070740
+iteration 20
+reduce result: -455.101929
+iteration 21
+reduce result: -410.382568
+iteration 22
+reduce result: -269.329651
+iteration 23
+reduce result: -586.826111
+iteration 24
+reduce result: -552.717468
+iteration 25
+reduce result: -415.049377
+iteration 26
+reduce result: -270.793396
+iteration 27
+reduce result: -312.660797
+iteration 28
+reduce result: -359.750885
+iteration 29
+reduce result: -462.936890
+iteration 30
+reduce result: -384.370514
+iteration 31
+reduce result: -420.349060
+iteration 32
+reduce result: -402.546814
+iteration 33
+reduce result: -350.062164
+iteration 34
+reduce result: -397.993774
+iteration 35
+reduce result: -438.596130
+iteration 36
+reduce result: -332.927399
+iteration 37
+reduce result: -409.524139
+iteration 38
+reduce result: -394.655579
+iteration 39
+reduce result: -473.444641
+iteration 40
+reduce result: -492.313110
+iteration 41
+reduce result: -433.202087
+iteration 42
+reduce result: -397.738342
+iteration 43
+reduce result: -410.787018
+iteration 44
+reduce result: -310.394501
+iteration 45
+reduce result: -255.267319
+iteration 46
+reduce result: -384.516785
+iteration 47
+reduce result: -312.168457
+iteration 48
+reduce result: -488.082275
+iteration 49
+reduce result: -528.863281
+iteration 50
+reduce result: -432.854889
+iteration 51
+reduce result: -310.408264
+iteration 52
+reduce result: -359.534454
+iteration 53
+reduce result: -360.982391
+iteration 54
+reduce result: -479.013367
+iteration 55
+reduce result: -399.263306
+iteration 56
+reduce result: -374.669403
+iteration 57
+reduce result: -500.435516
+iteration 58
+reduce result: -364.347046
+iteration 59
+reduce result: -357.416595
+iteration 60
+reduce result: -294.160767
+iteration 61
+reduce result: -455.480682
+iteration 62
+reduce result: -442.517426
+iteration 63
+reduce result: -391.373932
+iteration 64
+reduce result: -406.050751
+iteration 65
+reduce result: -446.112000
+iteration 66
+reduce result: -423.837219
+iteration 67
+reduce result: -469.195221
+iteration 68
+reduce result: -482.279053
+iteration 69
+reduce result: -472.611298
+iteration 70
+reduce result: -208.948975
+iteration 71
+reduce result: -406.019226
+iteration 72
+reduce result: -264.219055
+iteration 73
+reduce result: -481.305359
+iteration 74
+reduce result: -446.707764
+iteration 75
+reduce result: -385.581879
+iteration 76
+reduce result: -313.722870
+iteration 77
+reduce result: -406.906281
+iteration 78
+reduce result: -365.970825
+iteration 79
+reduce result: -324.561707
+iteration 80
+reduce result: -464.988739
+iteration 81
+reduce result: -355.577423
+iteration 82
+reduce result: -366.577728
+iteration 83
+reduce result: -220.706711
+iteration 84
+reduce result: -462.145630
+iteration 85
+reduce result: -277.119293
+iteration 86
+reduce result: -483.368195
+iteration 87
+reduce result: -361.409729
+iteration 88
+reduce result: -466.819336
+iteration 89
+reduce result: -151.458954
+iteration 90
+reduce result: -377.268616
+iteration 91
+reduce result: -486.015869
+iteration 92
+reduce result: -389.316376
+iteration 93
+reduce result: -393.156403
+iteration 94
+reduce result: -423.370087
+iteration 95
+reduce result: -320.633698
+iteration 96
+reduce result: -381.994141
+iteration 97
+reduce result: -544.104004
+iteration 98
+reduce result: -412.653137
+iteration 99
+reduce result: -473.270996
+
+N=30000. Milliseconds passed: 6334

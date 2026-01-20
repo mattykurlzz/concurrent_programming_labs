@@ -2,3 +2,6 @@ build
 .git
 .vscode
 
+venv
+*/tmp.log
+results/*

@@ -16,6 +16,22 @@ double omp_get_wtime(void) {
 #define EULERS (2.718281828459045)
 #define MINIMAL_DIVISOR 0.001
 
+// Timing structure to store measurements
+typedef struct {
+    double total_time;
+    double generate_time;
+    double map_time;
+    double merge_time;
+    double sort_time;
+    double reduce_time;
+    double overhead_time;
+    int iteration_count;
+} TimingStats;
+
+// Global timing structure (one per iteration)
+TimingStats *timing_stats = NULL;
+int current_iteration = 0;
+
 unsigned int hash_position(uint32_t position, uint32_t iteration) {
     unsigned int h = position;
     h ^= iteration << 16;
@@ -29,6 +45,8 @@ unsigned int hash_position(uint32_t position, uint32_t iteration) {
 
 void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
               unsigned int seed, const int fixed) {
+    double start_time = omp_get_wtime();
+    
     *M1_p = (float *)malloc(sizeof(float) * len);
     *M2_p = (float *)malloc(sizeof(float) * (len / 2));
 
@@ -64,9 +82,16 @@ void generate(float **M1_p, float **M2_p, const uint32_t len, const uint32_t A,
             }
         }
     }
+    
+    double end_time = omp_get_wtime();
+    if (timing_stats != NULL) {
+        timing_stats[current_iteration].generate_time += (end_time - start_time);
+    }
 }
 
 void map(float * const M1, float * const M2, const uint32_t len) {
+    double start_time = omp_get_wtime();
+    
     #pragma omp parallel for default(none) shared(M1, M2, len) schedule(guided, 16)
     for (uint32_t i = 0; i < len; i++) {
         M1[i] = sinh(M1[i]);
@@ -93,16 +118,30 @@ void map(float * const M1, float * const M2, const uint32_t len) {
     }
 
     free(M2_copy);
+    
+    double end_time = omp_get_wtime();
+    if (timing_stats != NULL) {
+        timing_stats[current_iteration].map_time += (end_time - start_time);
+    }
 }
 
 void merge(float * const M1, float * const M2, const uint32_t len) {
+    double start_time = omp_get_wtime();
+    
     #pragma omp parallel for default(none) shared(len, M1, M2) schedule(guided, 3)
     for (uint32_t i = 0; i < len / 2; i++) {
         M2[i] = M1[i] >= M2[i] ? M1[i] : M2[i];
     }
+    
+    double end_time = omp_get_wtime();
+    if (timing_stats != NULL) {
+        timing_stats[current_iteration].merge_time += (end_time - start_time);
+    }
 }
 
 void sort_list(float ** M2_p, const uint32_t len) {
+    double start_time = omp_get_wtime();
+    
     uint32_t k = omp_get_max_threads();
     
     uint32_t partial_len = ceil((len / 2.) / k);
@@ -167,15 +206,22 @@ void sort_list(float ** M2_p, const uint32_t len) {
     free(sizes);
     free(tips);
     free(shifts);
+    
+    double end_time = omp_get_wtime();
+    if (timing_stats != NULL) {
+        timing_stats[current_iteration].sort_time += (end_time - start_time);
+    }
 }
 
 float reduce(float * const M2, const uint32_t len, const int no_sort) {
+    double start_time = omp_get_wtime();
+    
     float compare = 0;
     float sum = 0;
     float tmp = 0;
 
     compare = M2[0];
-    // cocncurrent reading and writing to compare may break cycle logic
+    // concurrent reading and writing to compare may break cycle logic
     if (no_sort) {
         for (uint32_t i = 0; i < len / 2; i++) {
             if ((fabsf(M2[i]) >= MINIMAL_DIVISOR) && (fabsf(M2[i]) < compare)) {
@@ -193,8 +239,91 @@ float reduce(float * const M2, const uint32_t len, const int no_sort) {
             }
         }
     }
+    
+    double end_time = omp_get_wtime();
+    if (timing_stats != NULL) {
+        timing_stats[current_iteration].reduce_time += (end_time - start_time);
+    }
 
     return sum;
+}
+
+// Function to print timing statistics
+void print_timing_stats(int iterations, int write_to_file) {
+    TimingStats totals = {0};
+    FILE *csv_file = NULL;
+    
+    if (write_to_file) {
+        csv_file = fopen("timing_results.csv", "w");
+        if (csv_file) {
+            fprintf(csv_file, "iteration,total_time,generate_time,map_time,merge_time,sort_time,reduce_time,overhead_time\n");
+        }
+    }
+    
+    printf("\n=== Detailed Timing Statistics ===\n");
+    printf("Iteration |   Total  | Generate |    Map   |  Merge  |   Sort   |  Reduce  | Overhead\n");
+    printf("----------|----------|----------|----------|----------|----------|----------|----------\n");
+    
+    for (int i = 0; i < iterations; i++) {
+        TimingStats *ts = &timing_stats[i];
+        
+        // Calculate overhead as difference between total and sum of components
+        double components_sum = ts->generate_time + ts->map_time + ts->merge_time + 
+                               ts->sort_time + ts->reduce_time;
+        ts->overhead_time = ts->total_time - components_sum;
+        
+        printf("%9d | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f\n",
+               i, ts->total_time * 1000.0, ts->generate_time * 1000.0,
+               ts->map_time * 1000.0, ts->merge_time * 1000.0,
+               ts->sort_time * 1000.0, ts->reduce_time * 1000.0,
+               ts->overhead_time * 1000.0);
+        
+        // Accumulate totals
+        totals.total_time += ts->total_time;
+        totals.generate_time += ts->generate_time;
+        totals.map_time += ts->map_time;
+        totals.merge_time += ts->merge_time;
+        totals.sort_time += ts->sort_time;
+        totals.reduce_time += ts->reduce_time;
+        totals.overhead_time += ts->overhead_time;
+        
+        // Write to CSV if requested
+        if (csv_file) {
+            fprintf(csv_file, "%d,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+                    i, ts->total_time, ts->generate_time, ts->map_time,
+                    ts->merge_time, ts->sort_time, ts->reduce_time, ts->overhead_time);
+        }
+    }
+    
+    printf("----------|----------|----------|----------|----------|----------|----------|----------\n");
+    printf("%9s | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f\n",
+           "TOTAL", totals.total_time * 1000.0, totals.generate_time * 1000.0,
+           totals.map_time * 1000.0, totals.merge_time * 1000.0,
+           totals.sort_time * 1000.0, totals.reduce_time * 1000.0,
+           totals.overhead_time * 1000.0);
+    
+    printf("%9s | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f | %8.3f\n",
+           "AVG", (totals.total_time/iterations) * 1000.0, 
+           (totals.generate_time/iterations) * 1000.0,
+           (totals.map_time/iterations) * 1000.0,
+           (totals.merge_time/iterations) * 1000.0,
+           (totals.sort_time/iterations) * 1000.0,
+           (totals.reduce_time/iterations) * 1000.0,
+           (totals.overhead_time/iterations) * 1000.0);
+    
+    // Calculate percentages
+    printf("\n=== Time Distribution (Percentage of Total) ===\n");
+    printf("Generate: %.1f%%\n", (totals.generate_time / totals.total_time) * 100.0);
+    printf("Map:      %.1f%%\n", (totals.map_time / totals.total_time) * 100.0);
+    printf("Merge:    %.1f%%\n", (totals.merge_time / totals.total_time) * 100.0);
+    printf("Sort:     %.1f%%\n", (totals.sort_time / totals.total_time) * 100.0);
+    printf("Reduce:   %.1f%%\n", (totals.reduce_time / totals.total_time) * 100.0);
+    printf("Overhead: %.1f%%\n", (totals.overhead_time / totals.total_time) * 100.0);
+    
+    if (csv_file) {
+        fclose(csv_file);
+        printf("\nDetailed timing data saved to 'timing_results.csv'\n");
+    }
 }
 
 // build command: gcc -O3 -Wall -fopenmp -o lab3_parallel_with_fopenmp lab1.c -lm
@@ -207,6 +336,7 @@ int main(int argc, char *argv[]) {
     const int fixed_seq = atoi(argv[2]) > 2; // T if 3 or 4
     const int no_sort = atoi(argv[2]) % 2 == 0; // T if 2 or 4
     const int threads_num = argc > 3 ? atoi(argv[3]) : 1;
+    const int write_timing_csv = argc > 4 ? atoi(argv[4]) : 0;
 
     int finished = 0;
 
@@ -215,6 +345,8 @@ int main(int argc, char *argv[]) {
     float iteration_result = 0;
     double T1, T2, Ttmp;
     int64_t delta_ms;
+    
+    const int ITERATIONS = 100;
 
 #ifdef _OPENMP
     printf("set threads num to %i\n", threads_num);
@@ -222,15 +354,39 @@ int main(int argc, char *argv[]) {
 #endif
 
     N = atoi(argv[1]);
+    
+    // Allocate timing statistics
+    timing_stats = (TimingStats *)malloc(ITERATIONS * sizeof(TimingStats));
+    if (timing_stats == NULL) {
+        fprintf(stderr, "Failed to allocate timing statistics\n");
+        return -1;
+    }
+    
+    // Initialize timing stats
+    for (int i = 0; i < ITERATIONS; i++) {
+        timing_stats[i].total_time = 0.0;
+        timing_stats[i].generate_time = 0.0;
+        timing_stats[i].map_time = 0.0;
+        timing_stats[i].merge_time = 0.0;
+        timing_stats[i].sort_time = 0.0;
+        timing_stats[i].reduce_time = 0.0;
+        timing_stats[i].overhead_time = 0.0;
+        timing_stats[i].iteration_count = 0;
+    }
+    
     T1 = Ttmp = omp_get_wtime();
     omp_set_nested(1); 
     
     uint32_t progress = 0;
-    #pragma omp parallel sections shared(finished, progress) num_threads(threads_num)
+    #pragma omp parallel sections shared(finished, progress, current_iteration) num_threads(threads_num)
     {
         #pragma omp section
         {
-            for (uint32_t i = 0; i < 100; i++) {
+            for (uint32_t i = 0; i < ITERATIONS; i++) {
+                double iteration_start = omp_get_wtime();
+                current_iteration = i;
+                timing_stats[i].iteration_count = i;
+                
                 #pragma omp atomic write
                 progress = i;
 
@@ -246,13 +402,19 @@ int main(int argc, char *argv[]) {
                 merge(M1, M2, N);
                 if (!no_sort) {
                     sort_list(&M2, N);
+                } else {
+                    timing_stats[i].sort_time = 0.0;
                 }
                 iteration_result = reduce(M2, N, no_sort);
 
                 free(M1);
                 free(M2);
 
-                // printf("reduce result: %f\n", iteration_result);
+                double iteration_end = omp_get_wtime();
+                timing_stats[i].total_time = iteration_end - iteration_start;
+                
+                // Optional: Print per-iteration timing
+                // printf("Iteration %d: %.3f ms\n", i, timing_stats[i].total_time * 1000.0);
             }
             #pragma omp atomic write
             finished = 1;
@@ -281,6 +443,15 @@ int main(int argc, char *argv[]) {
 
     T2 = omp_get_wtime();
     delta_ms = (T2 - T1) * 1000;
-    printf("\nN=%d. Milliseconds passed: %ld\n", N, delta_ms);
+    
+    printf("\nN=%d. Total milliseconds passed: %ld\n", N, delta_ms);
+    printf("Average time per iteration: %.3f ms\n", delta_ms / (double)ITERATIONS);
+    
+    // Print detailed timing statistics
+    print_timing_stats(ITERATIONS, write_timing_csv);
+    
+    // Free timing statistics
+    free(timing_stats);
+    
     return 0;
 }

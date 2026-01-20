@@ -175,7 +175,7 @@ float reduce(float * const M2, const uint32_t len, const int no_sort) {
         }
     }
 
-    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare, sum) schedule(guided, 13) reduction(+:sum)
+    #pragma omp parallel for default(none) private(tmp) shared(len, M2, compare) schedule(guided, 13) reduction(+:sum)
     for (uint32_t i = 0; i < len / 2; i++) {
         if ((int)(M2[i] / compare) % 2 == 0) {
             tmp = sin(M2[i]);

@@ -2,7 +2,7 @@
 
 PLOT_NAME="speed_results"
 
-PLOT_DIR="results/lab4_thread_overhead"
+PLOT_DIR="results/lab4_8"
 TMP_FILE_NAME="tmp.log"
 CSV_NAME="$PLOT_NAME.csv"
 CHUNKS_NUM=20
@@ -21,12 +21,12 @@ fi
 touch "$PLOT_DIR/$CSV_NAME"
 echo "elements_count,time_taken,thread_count" >> "$PLOT_DIR/$CSV_NAME"
 
-gcc -O3 -Wall -fopenmp -o build/lab4_4 lab4_4.c -lm
+gcc -O3 -Wall -fopenmp -o build/lab4_8 lab4_8.c -lm
 
 for array_len in $(seq 1000 1000 15000); do
     for threadc in $(seq 1 1 12); do
         tmp_file="$PLOT_DIR/$TMP_FILE_NAME"
-        ./build/lab4_4 $array_len 1 $threadc > "$tmp_file"
+        ./build/lab4_8 $array_len 1 $threadc > "$tmp_file"
 
         line=$(grep "^N=[0-9]*\." "$tmp_file")
         value="${line#*: }"

@@ -11,40 +11,63 @@ os.makedirs("files", exist_ok=True)
 
 fig, ax = plt.subplots(figsize=(14, 10))
 
-thread_counts = sorted(results['thread_count'].unique())[:12]
-colors = plt.cm.tab20(np.linspace(0, 1, len(thread_counts)))
+# Get unique thread counts and element counts
+thread_counts = sorted(results['thread_count'].unique())
+element_counts = sorted(results['elements_count'].unique())
 
-for idx, threads in enumerate(thread_counts):
-    thread_data = results[results['thread_count'] == threads]
+# Select a subset of element counts to plot (avoid clutter)
+# Or plot all if you prefer
+selected_elements = element_counts[::max(1, len(element_counts)//6)]  # Select ~6 element counts
+
+colors = plt.cm.tab20(np.linspace(0, 1, len(selected_elements)))
+
+baseline_threads = 1
+
+for idx, elem_count in enumerate(selected_elements):
+    elem_data = results[results['elements_count'] == elem_count]
     
-    if thread_data.empty:
+    if elem_data.empty:
         continue
     
-    grouped = thread_data.groupby('elements_count')['time_taken'].mean()
+    # Get baseline (single-threaded) time for this element count
+    baseline_time = elem_data[elem_data['thread_count'] == baseline_threads]['time_taken'].mean()
     
-    x = grouped.index.values
-    y = grouped.values
+    if np.isnan(baseline_time):
+        continue
     
-    sort_idx = np.argsort(x)
-    x = x[sort_idx]
-    y = y[sort_idx]
+    # Calculate speedup for each thread count
+    speedups = []
+    valid_threads = []
     
-    ax.plot(x, y, '-', linewidth=3, color=colors[idx], 
-           label=f'{threads} threads', alpha=0.8)
+    for threads in thread_counts:
+        thread_time = elem_data[elem_data['thread_count'] == threads]['time_taken'].mean()
+        if not np.isnan(thread_time) and threads != baseline_threads:
+            speedup = baseline_time / thread_time
+            speedups.append(speedup)
+            valid_threads.append(threads)
+    
+    if speedups:
+        ax.plot(valid_threads, speedups, '-o', linewidth=2, markersize=8,
+               color=colors[idx], label=f'{elem_count:,} elements', alpha=0.8)
 
-ax.set_title('Time vs Elements Count', fontsize=16, fontweight='bold')
-ax.set_xlabel('Elements Count', fontsize=14, fontweight='bold')
-ax.set_ylabel('Time Taken (ms)', fontsize=14, fontweight='bold')
+# Add ideal speedup line (y = x)
+max_threads = max(thread_counts)
+ideal_x = np.array([1, max_threads])
+ideal_y = ideal_x  # y = x for ideal speedup
+ax.plot(ideal_x, ideal_y, 'k--', linewidth=2, alpha=0.5, label='Ideal speedup')
+
+ax.set_title('Speedup vs Number of Threads', fontsize=16, fontweight='bold')
+ax.set_xlabel('Number of Threads', fontsize=14, fontweight='bold')
+ax.set_ylabel('Speedup (relative to single-threaded)', fontsize=14, fontweight='bold')
 ax.grid(True, alpha=0.4, linewidth=0.5)
-ax.legend(fontsize=10, ncol=3)
+ax.legend(fontsize=10, ncol=2)
 
-# if results['elements_count'].max() / results['elements_count'].min() > 100:
-#     ax.set_xscale('log')
-# if results['time_taken'].max() / results['time_taken'].min() > 100:
-#     ax.set_yscale('log')
+# Ensure axes start at reasonable values
+ax.set_xlim(left=0)
+ax.set_ylim(bottom=0)
 
 plt.tight_layout()
-plt.savefig("files/time_lines.png", bbox_inches='tight', dpi=300)
+plt.savefig("files/speedup_vs_threads.png", bbox_inches='tight', dpi=300)
 plt.close()
 
-print(f"Generated files/time_lines.png")
+print(f"Generated files/speedup_vs_threads.png")
